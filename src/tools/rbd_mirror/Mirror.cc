@@ -115,35 +115,35 @@ public:
 
     command = "rbd mirror status";
     r = admin_socket->register_command(command, command, this,
-				       "get status for rbd mirror");
+                       "get status for rbd mirror");
     if (r == 0) {
       commands[command] = new StatusCommand(mirror);
     }
 
     command = "rbd mirror start";
     r = admin_socket->register_command(command, command, this,
-				       "start rbd mirror");
+                       "start rbd mirror");
     if (r == 0) {
       commands[command] = new StartCommand(mirror);
     }
 
     command = "rbd mirror stop";
     r = admin_socket->register_command(command, command, this,
-				       "stop rbd mirror");
+                       "stop rbd mirror");
     if (r == 0) {
       commands[command] = new StopCommand(mirror);
     }
 
     command = "rbd mirror restart";
     r = admin_socket->register_command(command, command, this,
-				       "restart rbd mirror");
+                       "restart rbd mirror");
     if (r == 0) {
       commands[command] = new RestartCommand(mirror);
     }
 
     command = "rbd mirror flush";
     r = admin_socket->register_command(command, command, this,
-				       "flush rbd mirror");
+                       "flush rbd mirror");
     if (r == 0) {
       commands[command] = new FlushCommand(mirror);
     }
@@ -151,14 +151,14 @@ public:
 
   ~MirrorAdminSocketHook() {
     for (Commands::const_iterator i = commands.begin(); i != commands.end();
-	 ++i) {
+     ++i) {
       (void)admin_socket->unregister_command(i->first);
       delete i->second;
     }
   }
 
   bool call(std::string command, cmdmap_t& cmdmap, std::string format,
-	    bufferlist& out) {
+        bufferlist& out) {
     Commands::const_iterator i = commands.find(command);
     assert(i != commands.end());
     Formatter *f = Formatter::create(format);
@@ -202,7 +202,7 @@ void Mirror::handle_signal(int signum)
 }
 
 int Mirror::init()
-{
+{ //初始化rados库,由于关闭了rbd cache,所以需要init_with_context传入配置
   int r = m_local->init_with_context(m_cct);
   if (r < 0) {
     derr << "could not initialize rados handle" << dendl;
@@ -217,11 +217,11 @@ int Mirror::init()
 
   // TODO: make interval configurable
   m_local_cluster_watcher.reset(new ClusterWatcher(m_local, m_lock));
-
+  //创建ImageDeleter线程,用来定期删除卷
   m_image_deleter.reset(new ImageDeleter(m_threads->work_queue,
                                          m_threads->timer,
                                          &m_threads->timer_lock));
-
+  //用来镜像同步
   m_image_sync_throttler.reset(new ImageSyncThrottler<>());
 
   return r;
@@ -390,7 +390,7 @@ void Mirror::update_replayers(const PoolPeers &pool_peers)
         // TODO: make async, and retry connecting within replayer
         int r = replayer->init();
         if (r < 0) {
-	  continue;
+      continue;
         }
         m_replayers.insert(std::make_pair(pool_peer, std::move(replayer)));
       }
