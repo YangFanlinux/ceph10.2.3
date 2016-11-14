@@ -58,9 +58,10 @@ void ClusterWatcher::refresh_pools()
   // TODO: perhaps use a workqueue instead, once we get notifications
   // about config changes for existing pools
 }
-
+//通过遍历本地集群所有pool，获取所有涉及到mirror功能的pool到pool_names
+//同时获取peer端集群信息与对端client信息
 void ClusterWatcher::read_pool_peers(PoolPeers *pool_peers,
-				     PoolNames *pool_names)
+                     PoolNames *pool_names)
 {
   list<pair<int64_t, string> > pools;
   int r = m_cluster->pool_list2(pools);
@@ -68,7 +69,7 @@ void ClusterWatcher::read_pool_peers(PoolPeers *pool_peers,
     derr << "error listing pools: " << cpp_strerror(r) << dendl;
     return;
   }
-
+  //循环遍历本地所有pool
   for (auto kv : pools) {
     int64_t pool_id = kv.first;
     string pool_name = kv.second;
@@ -82,7 +83,7 @@ void ClusterWatcher::read_pool_peers(PoolPeers *pool_peers,
       continue;
     }
     if (pool_id != base_tier) {
-      // pool is a cache; skip it
+      // pool is a cache; skip it 如果是cache pool 则跳过此pool
       continue;
     }
 
@@ -97,10 +98,10 @@ void ClusterWatcher::read_pool_peers(PoolPeers *pool_peers,
     }
 
     rbd_mirror_mode_t mirror_mode;
-    r = librbd::mirror_mode_get(ioctx, &mirror_mode);
+    r = librbd::mirror_mode_get(ioctx, &mirror_mode);//首先读一下pool的配置，看是否开启了mirror配置
     if (r < 0) {
       derr << "could not tell whether mirroring was enabled for " << pool_name
-	   << " : " << cpp_strerror(r) << dendl;
+       << " : " << cpp_strerror(r) << dendl;
       continue;
     }
     if (mirror_mode == RBD_MIRROR_MODE_DISABLED) {
@@ -109,14 +110,14 @@ void ClusterWatcher::read_pool_peers(PoolPeers *pool_peers,
     }
 
     vector<librbd::mirror_peer_t> configs;
-    r = librbd::mirror_peer_list(ioctx, &configs);
+    r = librbd::mirror_peer_list(ioctx, &configs);//读取对端peer集群信息
     if (r < 0) {
       derr << "error reading mirroring config for pool " << pool_name
-	   << cpp_strerror(r) << dendl;
+       << cpp_strerror(r) << dendl;
       continue;
     }
-
-    pool_peers->insert({pool_id, Peers{configs.begin(), configs.end()}});
+   //Peers通过peer_t(const librbd::mirror_peer_t &peer)构造函数
+    pool_peers->insert({ pool_id, Peers{ configs.begin(), configs.end() } });
     pool_names->insert(pool_name);
   }
 }

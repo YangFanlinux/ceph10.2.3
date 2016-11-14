@@ -23,9 +23,10 @@ namespace mirror {
  */
 class ClusterWatcher {
 public:
-  typedef std::set<peer_t> Peers;
+  typedef std::set<peer_t> Peers;//记录对端集群id及name
+  //int64_t本地pool的id到Peers对端clusterpeer列表映射。一个本地pool可能对应peer端多个cluster
   typedef std::map<int64_t, Peers>  PoolPeers;
-  typedef std::set<std::string> PoolNames;
+  typedef std::set<std::string> PoolNames;//本地涉及到mirror的pool
 
   ClusterWatcher(RadosRef cluster, Mutex &lock);
   ~ClusterWatcher() = default;
@@ -39,7 +40,7 @@ public:
 
 private:
   Mutex &m_lock;
-  RadosRef m_cluster;
+  RadosRef m_cluster; //本地集群raodos对象
   PoolPeers m_pool_peers;
   PoolNames m_pool_names;
 
