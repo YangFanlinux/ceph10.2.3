@@ -663,7 +663,8 @@ void Replayer::set_sources(const ImageIds &image_ids)
     start_image_replayer(it->second, image_id.id, image_id.name);
   }
 }
-
+//初始化ceph watch/notify机制
+//http://docs.ceph.com/docs/master/dev/osd_internals/watch_notify/
 int Replayer::mirror_image_status_init() {
   assert(!m_status_watcher);
 
@@ -676,7 +677,7 @@ int Replayer::mirror_image_status_init() {
   int r = m_local_io_ctx.operate(RBD_MIRRORING, &op);
   if (r < 0) {
     derr << "error initializing " << RBD_MIRRORING << "object: "
-     << cpp_strerror(r) << dendl;
+     << cpp_strerror(r) <<  dendl;
     return r;
   }
 
