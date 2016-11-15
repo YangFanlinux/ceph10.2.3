@@ -95,7 +95,7 @@ public:
 
     command = "rbd mirror deletion status";
     r = admin_socket->register_command(command, command, this,
-				       "get status for image deleter");
+                       "get status for image deleter");
     if (r == 0) {
       commands[command] = new StatusCommand(image_del);
     }
@@ -104,14 +104,14 @@ public:
 
   ~ImageDeleterAdminSocketHook() {
     for (Commands::const_iterator i = commands.begin(); i != commands.end();
-	 ++i) {
+     ++i) {
       (void)admin_socket->unregister_command(i->first);
       delete i->second;
     }
   }
 
   bool call(std::string command, cmdmap_t& cmdmap, std::string format,
-	    bufferlist& out) {
+        bufferlist& out) {
     Commands::const_iterator i = commands.find(command);
     assert(i != commands.end());
     Formatter *f = Formatter::create(format);
@@ -190,7 +190,7 @@ void ImageDeleter::run() {
     }
   }
 }
-
+//将image扔到删除队列中,等待ImageDeleter线程删除
 void ImageDeleter::schedule_image_delete(RadosRef local_rados,
                                          uint64_t local_pool_id,
                                          const std::string& local_image_id,
@@ -248,7 +248,7 @@ void ImageDeleter::cancel_waiter(const std::string& image_name) {
     (*del_info)->on_delete = nullptr;
   }
 }
-
+//删除队列中的image以及相关联的快照
 bool ImageDeleter::process_image_delete() {
 
   stringstream ss;

@@ -114,7 +114,7 @@ private:
       return global_id < rhs.global_id;
     }
   };
-
+  //init_local_mirroring_images本地osd omap读出来已有带镜像功能的image的所有的数据
   std::set<InitImageInfo> m_init_images;
 
   class ReplayerThread : public Thread {

@@ -45,7 +45,7 @@ public:
   typedef std::set<ImageId> ImageIds;
 
   PoolWatcher(librados::IoCtx &remote_io_ctx, double interval_seconds,
-	      Mutex &lock, Cond &cond);
+          Mutex &lock, Cond &cond);
   ~PoolWatcher();
   PoolWatcher(const PoolWatcher&) = delete;
   PoolWatcher& operator=(const PoolWatcher&) = delete;
@@ -65,7 +65,7 @@ private:
   SafeTimer m_timer;
   double m_interval;
 
-  ImageIds m_images;
+  ImageIds m_images;//对端pool中开启mirror的所有image信息
 
   int refresh(ImageIds *image_ids);
 };

@@ -31,7 +31,7 @@ namespace mirror {
 
 PoolWatcher::PoolWatcher(librados::IoCtx &remote_io_ctx,
                          double interval_seconds,
-			 Mutex &lock, Cond &cond) :
+             Mutex &lock, Cond &cond) :
   m_lock(lock),
   m_refresh_cond(cond),
   m_timer(g_ceph_context, m_lock, false),
@@ -59,7 +59,7 @@ const PoolWatcher::ImageIds& PoolWatcher::get_images() const
   return m_images;
 }
 
-void PoolWatcher::refresh_images(bool reschedule)
+void PoolWatcher::refresh_images(bool reschedule)//默认true
 {
   ImageIds image_ids;
   int r = refresh(&image_ids);
@@ -72,7 +72,7 @@ void PoolWatcher::refresh_images(bool reschedule)
     m_blacklisted = true;
   }
 
-  if (!m_stopping && reschedule) {
+  if (!m_stopping && reschedule) { //定时更新对端image信息
     FunctionContext *ctx = new FunctionContext(
       boost::bind(&PoolWatcher::refresh_images, this, true));
     m_timer.add_event_after(m_interval, ctx);
@@ -81,7 +81,7 @@ void PoolWatcher::refresh_images(bool reschedule)
   // TODO: perhaps use a workqueue instead, once we get notifications
   // about new/removed mirrored images
 }
-
+//获取对端pool的所有开启mirror模式的image信息
 int PoolWatcher::refresh(ImageIds *image_ids) {
   dout(20) << "enter" << dendl;
 

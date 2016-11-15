@@ -112,42 +112,42 @@ private:
 class ReplayerAdminSocketHook : public AdminSocketHook {
 public:
   ReplayerAdminSocketHook(CephContext *cct, const std::string &name,
-			  Replayer *replayer) :
+              Replayer *replayer) :
     admin_socket(cct->get_admin_socket()) {
     std::string command;
     int r;
 
     command = "rbd mirror status " + name;
     r = admin_socket->register_command(command, command, this,
-				       "get status for rbd mirror " + name);
+                       "get status for rbd mirror " + name);
     if (r == 0) {
       commands[command] = new StatusCommand(replayer);
     }
 
     command = "rbd mirror start " + name;
     r = admin_socket->register_command(command, command, this,
-				       "start rbd mirror " + name);
+                       "start rbd mirror " + name);
     if (r == 0) {
       commands[command] = new StartCommand(replayer);
     }
 
     command = "rbd mirror stop " + name;
     r = admin_socket->register_command(command, command, this,
-				       "stop rbd mirror " + name);
+                       "stop rbd mirror " + name);
     if (r == 0) {
       commands[command] = new StopCommand(replayer);
     }
 
     command = "rbd mirror restart " + name;
     r = admin_socket->register_command(command, command, this,
-				       "restart rbd mirror " + name);
+                       "restart rbd mirror " + name);
     if (r == 0) {
       commands[command] = new RestartCommand(replayer);
     }
 
     command = "rbd mirror flush " + name;
     r = admin_socket->register_command(command, command, this,
-				       "flush rbd mirror " + name);
+                       "flush rbd mirror " + name);
     if (r == 0) {
       commands[command] = new FlushCommand(replayer);
     }
@@ -155,14 +155,14 @@ public:
 
   ~ReplayerAdminSocketHook() {
     for (Commands::const_iterator i = commands.begin(); i != commands.end();
-	 ++i) {
+     ++i) {
       (void)admin_socket->unregister_command(i->first);
       delete i->second;
     }
   }
 
   bool call(std::string command, cmdmap_t& cmdmap, std::string format,
-	    bufferlist& out) {
+        bufferlist& out) {
     Commands::const_iterator i = commands.find(command);
     assert(i != commands.end());
     Formatter *f = Formatter::create(format);
@@ -219,7 +219,7 @@ private:
     }
 
     virtual void handle_notify(uint64_t notify_id, uint64_t handle,
-			       bufferlist &bl) {
+                   bufferlist &bl) {
       bufferlist out;
       acknowledge_notify(notify_id, handle, out);
     }
@@ -267,7 +267,7 @@ bool Replayer::is_blacklisted() const {
 int Replayer::init()
 {
   dout(20) << "replaying for " << m_peer << dendl;
-
+  //为了避免与全局g_ceph_context冲突,需要模拟api手动初始化本地和远程的rados对象
   int r = init_rados(g_ceph_context->_conf->cluster,
                      g_ceph_context->_conf->name.to_str(),
                      "local cluster", &m_local_rados);
@@ -281,14 +281,14 @@ int Replayer::init()
   if (r < 0) {
     return r;
   }
-
+  //因为m_local_pool_id是构造函数传入的，所以直接用ioctx_create2就ok
   r = m_local_rados->ioctx_create2(m_local_pool_id, m_local_io_ctx);
   if (r < 0) {
     derr << "error accessing local pool " << m_local_pool_id << ": "
          << cpp_strerror(r) << dendl;
     return r;
   }
-
+  //远端的pool_name与本地是相同的.也就是说镜像peer本地与远端集群name必须一致
   r = m_remote_rados->ioctx_create(m_local_io_ctx.get_pool_name().c_str(),
                                    m_remote_io_ctx);
   if (r < 0) {
@@ -296,11 +296,11 @@ int Replayer::init()
          << ": " << cpp_strerror(r) << dendl;
     return r;
   }
-  m_remote_pool_id = m_remote_io_ctx.get_id();
+  m_remote_pool_id = m_remote_io_ctx.get_id(); //记录远端的pool_id
 
   dout(20) << "connected to " << m_peer << dendl;
 
-  // Bootstrap existing mirroring images
+  // Bootstrap existing mirroring images,用来初始化m_init_images
   init_local_mirroring_images();
 
   // TODO: make interval configurable
@@ -335,7 +335,7 @@ int Replayer::init_rados(const std::string &cluster_name,
   int r = cct->_conf->parse_config_files(nullptr, nullptr, 0);
   if (r < 0) {
     derr << "could not read ceph conf for " << description << ": "
-	 << cpp_strerror(r) << dendl;
+     << cpp_strerror(r) << dendl;
     cct->put();
     return r;
   }
@@ -358,7 +358,7 @@ int Replayer::init_rados(const std::string &cluster_name,
     r = cct->_conf->parse_argv(args);
     if (r < 0) {
       derr << "could not parse command line args for " << description << ": "
-	   << cpp_strerror(r) << dendl;
+       << cpp_strerror(r) << dendl;
       cct->put();
       return r;
     }
@@ -376,7 +376,7 @@ int Replayer::init_rados(const std::string &cluster_name,
   r = (*rados_ref)->connect();
   if (r < 0) {
     derr << "error connecting to " << description << ": "
-	 << cpp_strerror(r) << dendl;
+     << cpp_strerror(r) << dendl;
     return r;
   }
 
@@ -401,8 +401,10 @@ void Replayer::init_local_mirroring_images() {
 
   std::string last_read = "";
   int max_read = 1024;
-  do {
+  do { //map<string id,string global_id>
     std::map<std::string, std::string> mirror_images;
+    //执行的是librbd::mirror_image_list,参考cls插件类机制.
+    //底层从osd的omap中获取mirror_images结构
     r = librbd::cls_client::mirror_image_list(&m_local_io_ctx, last_read,
                                               max_read, &mirror_images);
     if (r < 0) {
@@ -440,7 +442,7 @@ void Replayer::run()
     if (m_asok_hook_name != asok_hook_name || m_asok_hook == nullptr) {
       m_asok_hook_name = asok_hook_name;
       delete m_asok_hook;
-
+      //如果两集群配对出现变更，重新注册admin socket
       m_asok_hook = new ReplayerAdminSocketHook(g_ceph_context,
                                                 m_asok_hook_name, this);
     }
@@ -572,16 +574,16 @@ void Replayer::set_sources(const ImageIds &image_ids)
   dout(20) << "enter" << dendl;
 
   assert(m_lock.is_locked());
-
   if (!m_init_images.empty()) {
     dout(20) << "scanning initial local image set" << dendl;
+    //依次遍历远端镜像image_ids,对比m_init_images本地镜像,如果本地找到,则从m_init_images清除此image条目
     for (auto &remote_image : image_ids) {
       auto it = m_init_images.find(InitImageInfo(remote_image.global_id));
       if (it != m_init_images.end()) {
         m_init_images.erase(it);
       }
     }
-
+    //剩余的m_init_images直接将镜像删除
     // the remaining images in m_init_images must be deleted
     for (auto &image : m_init_images) {
       dout(20) << "scheduling the deletion of init image: "
@@ -597,6 +599,7 @@ void Replayer::set_sources(const ImageIds &image_ids)
   bool existing_image_replayers = !m_image_replayers.empty();
   for (auto image_it = m_image_replayers.begin();
        image_it != m_image_replayers.end();) {
+      //如果本次循环的m_image_replayers没有与远端image_ids匹配上,则干掉这个image_replayer
     if (image_ids.find(ImageId(image_it->first)) == image_ids.end()) {
       if (image_it->second->is_running()) {
         dout(20) << "stop image replayer for "
@@ -609,7 +612,7 @@ void Replayer::set_sources(const ImageIds &image_ids)
     }
     ++image_it;
   }
-
+  //如果远端根本没image需要mirror,而且在上个循环把本地的image_replayer都干掉了
   if (image_ids.empty()) {
     if (existing_image_replayers && m_image_replayers.empty()) {
       mirror_image_status_shut_down();
@@ -634,7 +637,7 @@ void Replayer::set_sources(const ImageIds &image_ids)
          << m_remote_io_ctx.get_pool_name() << ": " << cpp_strerror(r) << dendl;
     return;
   }
-
+  //如果之前和更新后都没有image需要mirror的情况
   if (m_image_replayers.empty() && !existing_image_replayers) {
     // create entry for pool if it doesn't exist
     r = mirror_image_status_init();
@@ -673,7 +676,7 @@ int Replayer::mirror_image_status_init() {
   int r = m_local_io_ctx.operate(RBD_MIRRORING, &op);
   if (r < 0) {
     derr << "error initializing " << RBD_MIRRORING << "object: "
-	 << cpp_strerror(r) << dendl;
+     << cpp_strerror(r) << dendl;
     return r;
   }
 
@@ -683,7 +686,7 @@ int Replayer::mirror_image_status_init() {
   r = watch_ctx->register_watch();
   if (r < 0) {
     derr << "error registering watcher for " << watch_ctx->get_oid()
-	 << " object: " << cpp_strerror(r) << dendl;
+     << " object: " << cpp_strerror(r) << dendl;
     return r;
   }
 
@@ -697,7 +700,7 @@ void Replayer::mirror_image_status_shut_down() {
   int r = m_status_watcher->unregister_watch();
   if (r < 0) {
     derr << "error unregistering watcher for " << m_status_watcher->get_oid()
-	 << " object: " << cpp_strerror(r) << dendl;
+     << " object: " << cpp_strerror(r) << dendl;
   }
   m_status_watcher.reset();
 }

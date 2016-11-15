@@ -221,7 +221,7 @@ int Mirror::init()
   m_image_deleter.reset(new ImageDeleter(m_threads->work_queue,
                                          m_threads->timer,
                                          &m_threads->timer_lock));
-  //用来管理镜像同步，接受md_config改变的消息
+
   m_image_sync_throttler.reset(new ImageSyncThrottler<>());
 
   return r;
@@ -312,17 +312,24 @@ void Mirror::stop()
   dout(20) << "enter" << dendl;
   Mutex::Locker l(m_lock);
 
-  if (m_stopping.read()) {
-    return;
-  }
+    dout(20) << "enter" << dendl;
+    while (!m_stopping.read()) { //收到SIGINT,SIGTERM信号则停止运行
+        m_local_cluster_watcher->refresh_pools();
+        Mutex::Locker l(m_lock);
+        if (!m_manual_stop) { //如果从Admin Socket收到停止命令，则终止mirror
+            update_replayers(m_local_cluster_watcher->get_pool_peers());
+        }
+        if (m_stopping.read()) {
+            return;
+        }
 
-  m_manual_stop = true;
+        m_manual_stop = true;
 
-  for (auto it = m_replayers.begin(); it != m_replayers.end(); it++) {
-    auto &replayer = it->second;
-    replayer->stop(true);
-  }
-}
+        for (auto it = m_replayers.begin(); it != m_replayers.end(); it++) {
+            auto &replayer = it->second;
+            replayer->stop(true);
+        }
+    }
 
 void Mirror::restart()
 {
@@ -380,22 +387,23 @@ void Mirror::update_replayers(const PoolPeers &pool_peers)
     }
   }
 
-  for (auto &kv : pool_peers) {
-    for (auto &peer : kv.second) {
-      PoolPeer pool_peer(kv.first, peer);
-      if (m_replayers.find(pool_peer) == m_replayers.end()) {
-        dout(20) << "starting replayer for " << peer << dendl;
-        unique_ptr<Replayer> replayer(new Replayer(m_threads, m_image_deleter,
+  for (auto &kv : pool_peers) { //kv(int64_t, Peers), pool_peers=std::map<int64_t, Peers>
+      for (auto &peer : kv.second) { //peer= std::set<peer_t>
+          PoolPeer pool_peer(kv.first, peer); //遍历每个peer_t的元素,从id->set整合为id->pair
+          //如果从最新的pool_peers中获取的数据没有在当前m_replayers中存在,则需要new一个新的replayer
+          if (m_replayers.find(pool_peer) == m_replayers.end()) {
+              dout(20) << "starting replayer for " << peer << dendl;
+              unique_ptr<Replayer> replayer(new Replayer(m_threads, m_image_deleter,
                                                    m_image_sync_throttler,
                                                    kv.first, peer, m_args));
-        // TODO: make async, and retry connecting within replayer
-        int r = replayer->init();
-        if (r < 0) {
-      continue;
-        }
-        m_replayers.insert(std::make_pair(pool_peer, std::move(replayer)));
+              // TODO: make async, and retry connecting within replayer
+              int r = replayer->init();//启动replayer线程
+              if (r < 0) {
+                 continue;
+              }
+              m_replayers.insert(std::make_pair(pool_peer, std::move(replayer)));
+          }
       }
-    }
   }
 }
 
