@@ -637,9 +637,9 @@ void Replayer::set_sources(const ImageIds &image_ids)
          << m_remote_io_ctx.get_pool_name() << ": " << cpp_strerror(r) << dendl;
     return;
   }
-  //如果之前和更新后都没有image需要mirror的情况
+  //如果之前和更新后都没有image需要mirror 的情况
   if (m_image_replayers.empty() && !existing_image_replayers) {
-    // create entry for pool if it doesn't exist
+    // create entry for pool if it doesn't exist;创建rbd mirror 配置文件到librbd上的object
     r = mirror_image_status_init();
     if (r < 0) {
       return;
@@ -663,8 +663,7 @@ void Replayer::set_sources(const ImageIds &image_ids)
     start_image_replayer(it->second, image_id.id, image_id.name);
   }
 }
-//初始化ceph watch/notify机制
-//http://docs.ceph.com/docs/master/dev/osd_internals/watch_notify/
+//初始化ceph watch/notify机制,检测rbd_mirror配置文件,类似http://docs.ceph.com/docs/master/dev/osd_internals/watch_notify/
 int Replayer::mirror_image_status_init() {
   assert(!m_status_watcher);
 
