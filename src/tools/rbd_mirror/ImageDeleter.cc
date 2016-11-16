@@ -223,7 +223,7 @@ void ImageDeleter::wait_for_scheduled_deletion(const std::string& image_name,
 
   Mutex::Locker l(m_delete_lock);
   auto del_info = find_delete_info(image_name);
-  if (!del_info) {
+  if (!del_info) {//没找到需要删除的镜像就直接回调ctx
     // image not scheduled for deletion
     ctx->complete(0);
     return;

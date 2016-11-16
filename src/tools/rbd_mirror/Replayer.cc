@@ -645,7 +645,7 @@ void Replayer::set_sources(const ImageIds &image_ids)
       return;
     }
   }
-
+  //遍历远端pool,创建image结构
   for (auto &image_id : image_ids) {
     auto it = m_image_replayers.find(image_id.id);
     if (it == m_image_replayers.end()) {
