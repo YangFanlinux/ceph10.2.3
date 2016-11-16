@@ -736,9 +736,9 @@ void Replayer::start_image_replayer(unique_ptr<ImageReplayer<> > &image_replayer
           }
 
           auto &image_replayer = it->second;
-          if (r >= 0) {
+          if (r >= 0) { //wait_for_scheduled_deletion返回0
             image_replayer->start();
-          } else {
+          } else {//这个分支貌似走不到
             start_image_replayer(image_replayer, image_id, image_name);
           }
        }

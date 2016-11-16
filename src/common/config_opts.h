@@ -35,8 +35,8 @@ OPTION(setuser_match_path, OPT_STR, "")  // make setuser/group conditional on th
 OPTION(pid_file, OPT_STR, "") // default changed by common_preinit()
 OPTION(chdir, OPT_STR, "/")
 OPTION(max_open_files, OPT_LONGLONG, 0)
-OPTION(restapi_log_level, OPT_STR, "") 	// default set by Python code
-OPTION(restapi_base_url, OPT_STR, "")	// "
+OPTION(restapi_log_level, OPT_STR, "")  // default set by Python code
+OPTION(restapi_base_url, OPT_STR, "")   // "
 OPTION(fatal_signal_handlers, OPT_BOOL, true)
 OPTION(erasure_code_dir, OPT_STR, CEPH_PKGLIBDIR"/erasure-code") // default location for erasure-code plugins
 OPTION(compression_dir, OPT_STR, CEPH_PKGLIBDIR"/compressor") // default location for compression plugins
@@ -455,7 +455,7 @@ OPTION(mds_freeze_tree_timeout, OPT_FLOAT, 30)    // detecting freeze tree deadl
 OPTION(mds_session_autoclose, OPT_FLOAT, 300) // autoclose idle session
 OPTION(mds_health_summarize_threshold, OPT_INT, 10) // collapse N-client health metrics to a single 'many'
 OPTION(mds_reconnect_timeout, OPT_FLOAT, 45)  // seconds to wait for clients during mds restart
-	      //  make it (mds_session_timeout - mds_beacon_grace)
+          //  make it (mds_session_timeout - mds_beacon_grace)
 OPTION(mds_tick_interval, OPT_FLOAT, 5)
 OPTION(mds_dirstat_min_interval, OPT_FLOAT, 1)    // try to avoid propagating more often than this
 OPTION(mds_scatter_nudge_interval, OPT_FLOAT, 5)  // how quickly dirstat changes propagate up the hierarchy
@@ -519,8 +519,8 @@ OPTION(mds_kill_journal_replay_at, OPT_INT, 0)
 OPTION(mds_journal_format, OPT_U32, 1)  // Default to most recent JOURNAL_FORMAT_*
 OPTION(mds_kill_create_at, OPT_INT, 0)
 OPTION(mds_inject_traceless_reply_probability, OPT_DOUBLE, 0) /* percentage
-				of MDS modify replies to skip sending the
-				client a trace on [0-1]*/
+                of MDS modify replies to skip sending the
+                client a trace on [0-1]*/
 OPTION(mds_wipe_sessions, OPT_BOOL, 0)
 OPTION(mds_wipe_ino_prealloc, OPT_BOOL, 0)
 OPTION(mds_skip_ino, OPT_INT, 0)
@@ -599,7 +599,7 @@ OPTION(osd_uuid, OPT_UUID, uuid_d())
 OPTION(osd_data, OPT_STR, "/var/lib/ceph/osd/$cluster-$id")
 OPTION(osd_journal, OPT_STR, "/var/lib/ceph/osd/$cluster-$id/journal")
 OPTION(osd_journal_size, OPT_INT, 5120)         // in mb
-// flags for specific control purpose during osd mount() process. 
+// flags for specific control purpose during osd mount() process.
 // e.g., can be 1 to skip over replaying journal
 // or 2 to skip over mounting omap or 3 to skip over both.
 // This might be helpful in case the journal is totally corrupted
@@ -864,7 +864,7 @@ OPTION(osd_snap_trim_cost, OPT_U32, 1<<20) // set default cost equal to 1MB io
 
 OPTION(osd_scrub_priority, OPT_U32, 5)
 // set default cost equal to 50MB io
-OPTION(osd_scrub_cost, OPT_U32, 50<<20) 
+OPTION(osd_scrub_cost, OPT_U32, 50<<20)
 
 /**
  * osd_recovery_op_warn_multiple scales the normal warning threshhold,
@@ -1024,19 +1024,19 @@ OPTION(filestore_omap_header_cache_size, OPT_INT, 1024)
 
 // Use omap for xattrs for attrs over
 // filestore_max_inline_xattr_size or
-OPTION(filestore_max_inline_xattr_size, OPT_U32, 0)	//Override
+OPTION(filestore_max_inline_xattr_size, OPT_U32, 0) //Override
 OPTION(filestore_max_inline_xattr_size_xfs, OPT_U32, 65536)
 OPTION(filestore_max_inline_xattr_size_btrfs, OPT_U32, 2048)
 OPTION(filestore_max_inline_xattr_size_other, OPT_U32, 512)
 
 // for more than filestore_max_inline_xattrs attrs
-OPTION(filestore_max_inline_xattrs, OPT_U32, 0)	//Override
+OPTION(filestore_max_inline_xattrs, OPT_U32, 0) //Override
 OPTION(filestore_max_inline_xattrs_xfs, OPT_U32, 10)
 OPTION(filestore_max_inline_xattrs_btrfs, OPT_U32, 10)
 OPTION(filestore_max_inline_xattrs_other, OPT_U32, 2)
 
 // max xattr value size
-OPTION(filestore_max_xattr_value_size, OPT_U32, 0)	//Override
+OPTION(filestore_max_xattr_value_size, OPT_U32, 0)  //Override
 OPTION(filestore_max_xattr_value_size_xfs, OPT_U32, 64<<10)
 OPTION(filestore_max_xattr_value_size_btrfs, OPT_U32, 64<<10)
 // ext4 allows 4k xattrs total including some smallish extra fields and the
@@ -1195,10 +1195,10 @@ OPTION(rbd_default_order, OPT_INT, 22)
 OPTION(rbd_default_stripe_count, OPT_U64, 0) // changing requires stripingv2 feature
 OPTION(rbd_default_stripe_unit, OPT_U64, 0) // changing to non-object size requires stripingv2 feature
 OPTION(rbd_default_features, OPT_INT, 61)   // only applies to format 2 images
-					    // +1 for layering, +2 for stripingv2,
-					    // +4 for exclusive lock, +8 for object map
-					    // +16 for fast-diff, +32 for deep-flatten,
-					    // +64 for journaling
+                        // +1 for layering, +2 for stripingv2,
+                        // +4 for exclusive lock, +8 for object map
+                        // +16 for fast-diff, +32 for deep-flatten,
+                        // +64 for journaling
 
 OPTION(rbd_default_map_options, OPT_STR, "") // default rbd map -o / --options
 

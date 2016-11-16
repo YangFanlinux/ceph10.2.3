@@ -212,7 +212,7 @@ void ImageDeleter::schedule_image_delete(RadosRef local_rados,
                        local_image_name, global_image_id)));
   m_delete_queue_cond.Signal();
 }
-
+//没找到需要删除的镜像就直接回调ctx,否则向回调函数传入-ESTALE,不调用回调
 void ImageDeleter::wait_for_scheduled_deletion(const std::string& image_name,
                                                Context *ctx,
                                                bool notify_on_failed_retry) {
@@ -223,7 +223,7 @@ void ImageDeleter::wait_for_scheduled_deletion(const std::string& image_name,
 
   Mutex::Locker l(m_delete_lock);
   auto del_info = find_delete_info(image_name);
-  if (!del_info) {//没找到需要删除的镜像就直接回调ctx
+  if (!del_info) {
     // image not scheduled for deletion
     ctx->complete(0);
     return;

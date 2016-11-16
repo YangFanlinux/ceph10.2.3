@@ -156,42 +156,42 @@ template <typename I>
 class ImageReplayerAdminSocketHook : public AdminSocketHook {
 public:
   ImageReplayerAdminSocketHook(CephContext *cct, const std::string &name,
-			       ImageReplayer<I> *replayer) :
+             ImageReplayer<I> *replayer) :
     admin_socket(cct->get_admin_socket()) {
     std::string command;
     int r;
 
     command = "rbd mirror status " + name;
     r = admin_socket->register_command(command, command, this,
-				       "get status for rbd mirror " + name);
+               "get status for rbd mirror " + name);
     if (r == 0) {
       commands[command] = new StatusCommand<I>(replayer);
     }
 
     command = "rbd mirror start " + name;
     r = admin_socket->register_command(command, command, this,
-				       "start rbd mirror " + name);
+               "start rbd mirror " + name);
     if (r == 0) {
       commands[command] = new StartCommand<I>(replayer);
     }
 
     command = "rbd mirror stop " + name;
     r = admin_socket->register_command(command, command, this,
-				       "stop rbd mirror " + name);
+               "stop rbd mirror " + name);
     if (r == 0) {
       commands[command] = new StopCommand<I>(replayer);
     }
 
     command = "rbd mirror restart " + name;
     r = admin_socket->register_command(command, command, this,
-				       "restart rbd mirror " + name);
+               "restart rbd mirror " + name);
     if (r == 0) {
       commands[command] = new RestartCommand<I>(replayer);
     }
 
     command = "rbd mirror flush " + name;
     r = admin_socket->register_command(command, command, this,
-				       "flush rbd mirror " + name);
+               "flush rbd mirror " + name);
     if (r == 0) {
       commands[command] = new FlushCommand<I>(replayer);
     }
@@ -199,14 +199,14 @@ public:
 
   ~ImageReplayerAdminSocketHook() {
     for (Commands::const_iterator i = commands.begin(); i != commands.end();
-	 ++i) {
+   ++i) {
       (void)admin_socket->unregister_command(i->first);
       delete i->second;
     }
   }
 
   bool call(std::string command, cmdmap_t& cmdmap, std::string format,
-	    bufferlist& out) {
+      bufferlist& out) {
     Commands::const_iterator i = commands.find(command);
     assert(i != commands.end());
     Formatter *f = Formatter::create(format);
@@ -255,11 +255,11 @@ ImageReplayer<I>::ImageReplayer(Threads *threads,
                              shared_ptr<ImageDeleter> image_deleter,
                              ImageSyncThrottlerRef<I> image_sync_throttler,
                              RadosRef local, RadosRef remote,
-			     const std::string &local_mirror_uuid,
-			     const std::string &remote_mirror_uuid,
-			     int64_t local_pool_id,
-			     int64_t remote_pool_id,
-			     const std::string &remote_image_id,
+           const std::string &local_mirror_uuid,
+           const std::string &remote_mirror_uuid,
+           int64_t local_pool_id,
+           int64_t remote_pool_id,
+           const std::string &remote_image_id,
                              const std::string &global_image_id) :
   m_threads(threads),
   m_image_deleter(image_deleter),
@@ -274,7 +274,7 @@ ImageReplayer<I>::ImageReplayer(Threads *threads,
   m_global_image_id(global_image_id),
   m_name(stringify(remote_pool_id) + "/" + remote_image_id),
   m_lock("rbd::mirror::ImageReplayer " + stringify(remote_pool_id) + " " +
-	 remote_image_id),
+   remote_image_id),
   m_progress_cxt(this),
   m_resync_listener(new ResyncListener<I>(this))
 {
@@ -286,7 +286,7 @@ ImageReplayer<I>::ImageReplayer(Threads *threads,
   int r = m_remote->pool_reverse_lookup(m_remote_pool_id, &pool_name);
   if (r < 0) {
     derr << "error resolving remote pool " << m_remote_pool_id
-	 << ": " << cpp_strerror(r) << dendl;
+   << ": " << cpp_strerror(r) << dendl;
     pool_name = stringify(m_remote_pool_id);
   }
   m_name = pool_name + "/" + m_global_image_id;
@@ -335,10 +335,10 @@ void ImageReplayer<I>::start(Context *on_finish, bool manual)
       r = -EINVAL;
     } else if (m_manual_stop && !manual) {
       dout(5) << "stopped manually, ignoring start without manual flag"
-	      << dendl;
+        << dendl;
       r = -EPERM;
     } else {
-      m_state = STATE_STARTING;
+      m_state = STATE_STARTING; //starting阶段
       m_last_r = 0;
       m_state_desc.clear();
       m_manual_stop = false;
@@ -357,11 +357,11 @@ void ImageReplayer<I>::start(Context *on_finish, bool manual)
     }
     return;
   }
-
+  //初始化remote和local的rados读写环境
   r = m_remote->ioctx_create2(m_remote_pool_id, m_remote_ioctx);
   if (r < 0) {
     derr << "error opening ioctx for remote pool " << m_remote_pool_id
-	 << ": " << cpp_strerror(r) << dendl;
+   << ": " << cpp_strerror(r) << dendl;
     on_start_fail(r, "error opening remote pool");
     return;
   }
@@ -376,13 +376,13 @@ void ImageReplayer<I>::start(Context *on_finish, bool manual)
 
   CephContext *cct = static_cast<CephContext *>(m_local->cct());
   journal::Settings settings;
-  settings.commit_interval = cct->_conf->rbd_mirror_journal_commit_age;
-  settings.max_fetch_bytes = cct->_conf->rbd_mirror_journal_max_fetch_bytes;
+  settings.commit_interval = cct->_conf->rbd_mirror_journal_commit_age; //5秒一次commit间隔
+  settings.max_fetch_bytes = cct->_conf->rbd_mirror_journal_max_fetch_bytes;//默认一次取32k数据
 
   m_remote_journaler = new Journaler(m_threads->work_queue,
                                      m_threads->timer,
-				     &m_threads->timer_lock, m_remote_ioctx,
-				     m_remote_image_id, m_local_mirror_uuid,
+             &m_threads->timer_lock, m_remote_ioctx,
+             m_remote_image_id, m_local_mirror_uuid,
                                      settings);
   bootstrap();
 }
@@ -390,7 +390,7 @@ void ImageReplayer<I>::start(Context *on_finish, bool manual)
 template <typename I>
 void ImageReplayer<I>::bootstrap() {
   dout(20) << "bootstrap params: "
-	   << "local_image_name=" << m_local_image_name << dendl;
+     << "local_image_name=" << m_local_image_name << dendl;
 
   Context *ctx = create_context_callback<
     ImageReplayer, &ImageReplayer<I>::handle_bootstrap>(this);
@@ -465,9 +465,9 @@ void ImageReplayer<I>::handle_bootstrap(int r) {
     if (m_name != name) {
       m_name = name;
       if (m_asok_hook) {
-	// Re-register asok commands using the new name.
-	delete m_asok_hook;
-	m_asok_hook = nullptr;
+  // Re-register asok commands using the new name.
+  delete m_asok_hook;
+  m_asok_hook = nullptr;
       }
     }
     if (!m_asok_hook) {
@@ -534,7 +534,7 @@ void ImageReplayer<I>::handle_start_replay(int r) {
   if (r < 0) {
     m_local_journal = nullptr;
     derr << "error starting external replay on local image "
-	 <<  m_local_image_id << ": " << cpp_strerror(r) << dendl;
+   <<  m_local_image_id << ": " << cpp_strerror(r) << dendl;
     on_start_fail(r, "error starting replay on local image");
     return;
   }
@@ -643,16 +643,16 @@ void ImageReplayer<I>::stop(Context *on_finish, bool manual)
       running = false;
     } else {
       if (!is_stopped_()) {
-	if (m_state == STATE_STARTING) {
-	  dout(20) << "canceling start" << dendl;
-	  if (m_bootstrap_request) {
+  if (m_state == STATE_STARTING) {
+    dout(20) << "canceling start" << dendl;
+    if (m_bootstrap_request) {
             bootstrap_request = m_bootstrap_request;
             bootstrap_request->get();
-	  }
-	} else {
-	  dout(20) << "interrupting replay" << dendl;
-	  shut_down_replay = true;
-	}
+    }
+  } else {
+    dout(20) << "interrupting replay" << dendl;
+    shut_down_replay = true;
+  }
 
         assert(m_on_stop_finish == nullptr);
         std::swap(m_on_stop_finish, on_finish);
@@ -736,7 +736,7 @@ void ImageReplayer<I>::restart(Context *on_finish)
   FunctionContext *ctx = new FunctionContext(
     [this, on_finish](int r) {
       if (r < 0) {
-	// Try start anyway.
+  // Try start anyway.
       }
       start(on_finish, true);
     });
@@ -812,7 +812,7 @@ void ImageReplayer<I>::on_flush_flush_commit_position_finish(Context *on_flush,
 {
   if (r < 0) {
     derr << "error flushing remote journal commit position: "
-	 << cpp_strerror(r) << dendl;
+   << cpp_strerror(r) << dendl;
   }
 
   update_mirror_image_status(false, boost::none);
@@ -1067,7 +1067,7 @@ template <typename I>
 void ImageReplayer<I>::handle_process_entry_safe(const ReplayEntry& replay_entry,
                                                  int r) {
   dout(20) << "commit_tid=" << replay_entry.get_commit_tid() << ", r=" << r
-	   << dendl;
+     << dendl;
 
   if (r < 0) {
     derr << "failed to commit journal event: " << cpp_strerror(r) << dendl;

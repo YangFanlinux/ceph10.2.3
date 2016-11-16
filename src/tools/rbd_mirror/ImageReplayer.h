@@ -52,6 +52,7 @@ namespace image_replayer { template <typename> class ReplayStatusFormatter; }
  * Replays changes from a remote cluster for a single image.
  */
 template <typename ImageCtxT = librbd::ImageCtx>
+
 class ImageReplayer {
 public:
   typedef typename librbd::journal::TypeTraits<ImageCtxT>::ReplayEntry ReplayEntry;
@@ -70,7 +71,7 @@ public:
                 RadosRef local, RadosRef remote,
                 const std::string &local_mirror_uuid,
                 const std::string &remote_mirror_uuid, int64_t local_pool_id,
-		int64_t remote_pool_id, const std::string &remote_image_id,
+        int64_t remote_pool_id, const std::string &remote_image_id,
                 const std::string &global_image_id);
   virtual ~ImageReplayer();
   ImageReplayer(const ImageReplayer&) = delete;
@@ -212,7 +213,7 @@ private:
     }
 
     virtual void update_progress(const std::string &description,
-				 bool flush = true);
+                 bool flush = true);
   private:
     ImageReplayer<ImageCtxT> *replayer;
   };
