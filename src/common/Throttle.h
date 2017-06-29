@@ -87,7 +87,7 @@ public:
    * total number taken by consumer would exceed the maximum number.
    * @param c number of slots to get
    * @param m new maximum number to set, ignored if it is 0
-   * @returns true if this request is blocked due to the throttling, false 
+   * @returns true if this request is blocked due to the throttling, false
    * otherwise
    */
   bool get(int64_t c = 1, int64_t m = 0);
@@ -138,7 +138,7 @@ public:
  *
  * delay = 0, r \in [0, l)
  * delay = (r - l) * (e / (h - l)), r \in [l, h)
- * delay = h + (r - h)((m - e)/(1 - h))
+ * delay = e + (r - h)((m - e)/(1 - h))
  */
 class BackoffThrottle {
   std::mutex lock;
